@@ -3,15 +3,15 @@ import DomMutationCollector from './DomMutationCollector.js';
 import DomMutationMessagePoster from './DomMutationMessagePoster.js';
 import hookDomMutations from './hookDomMutations.js';
 import hookTextContentChanges from './hookTextContentChanges.js';
+import NodeCollection from './NodeCollection.js';
 
 export default class WorkerisedRenderer {
   constructor(render) {
     this._render = render;
 
-    this._nodes = new Set();
-    this._nodesCount = 0;
+    this._nodeCollection = new NodeCollection();
 
-    this._domMutationMessagePoster = new DomMutationMessagePoster((node) => this._tagNode(node));
+    this._domMutationMessagePoster = new DomMutationMessagePoster(this._nodeCollection);
 
     this._domMutationCollector = new DomMutationCollector((mutations) => {
       this._domMutationMessagePoster.sendMutations(mutations);
@@ -30,13 +30,7 @@ export default class WorkerisedRenderer {
     hookDomMutations(collectMutation);
     hookTextContentChanges(collectMutation);
 
-    addEventListener('message', ({ data }) => {
-      switch (data.type) {
-        case 'event':
-          console.log(data.event);
-          break;
-      }
-    });
+    addEventListener('message', ({ data }) => this._processMessage(data));
 
     this._render();
   }
@@ -49,5 +43,13 @@ export default class WorkerisedRenderer {
 
     node._id = String(++this._nodesCount);
     this._nodes[node._id] = node;
+  }
+
+  _processMessage(data) {
+    switch (data.type) {
+      case 'event':
+        this._forwardedEventHandler.handleEvent(data.event);
+        break;
+    }
   }
 }
