@@ -30,6 +30,14 @@ export default class WorkerisedRenderer {
     hookDomMutations(collectMutation);
     hookTextContentChanges(collectMutation);
 
+    addEventListener('message', ({ data }) => {
+      switch (data.type) {
+        case 'event':
+          console.log(data.event);
+          break;
+      }
+    });
+
     this._render();
   }
 
