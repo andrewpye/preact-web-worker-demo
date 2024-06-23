@@ -8,8 +8,8 @@ const NON_SERIALISABLE_PROPS = [
 ];
 
 export default class DomMutationMessagePoster {
-  constructor(onTagNode) {
-    this._onTagNode = onTagNode;
+  constructor(nodeCollection) {
+    this._nodeCollection = nodeCollection;
   }
 
   sendMutations(mutations) {
@@ -39,8 +39,7 @@ export default class DomMutationMessagePoster {
       return node;
     }
   
-    // Tag each node with a unique ID for future reference.
-    this._onTagNode(node);
+    this._nodeCollection.add(node);
   
     const serialisableNode = Object.keys(node).reduce((serialisableNode, propName) => {
       if (node.hasOwnProperty(propName) && NON_SERIALISABLE_PROPS.indexOf(propName) === -1) {
