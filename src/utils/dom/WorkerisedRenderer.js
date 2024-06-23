@@ -8,27 +8,38 @@ export default class WorkerisedRenderer {
   constructor(render) {
     this._render = render;
 
-    this._domMutationMessagePoster = new DomMutationMessagePoster();
+    this._nodes = new Set();
+    this._nodesCount = 0;
+
+    this._domMutationMessagePoster = new DomMutationMessagePoster((node) => this._tagNode(node));
 
     this._domMutationCollector = new DomMutationCollector((mutations) => {
       this._domMutationMessagePoster.sendMutations(mutations);
     });
 
-    this.collectMutation = this.collectMutation.bind(this);
-    
     this._initialise();
   }
   
   _initialise() {
     createVirtualDom();
 
-    hookDomMutations(this.collectMutation);
-    hookTextContentChanges(this.collectMutation);
+    const collectMutation = (...args) => {
+      this._domMutationCollector.collectMutation(...args);
+    };
+
+    hookDomMutations(collectMutation);
+    hookTextContentChanges(collectMutation);
 
     this._render();
   }
 
-  collectMutation(...args) {
-    this._domMutationCollector.collectMutation(...args);
-  };
+  _tagNode(node) {
+    // Tag each node with a unique ID so we can retrieve them later.
+    if (node._id) {
+      return;
+    }
+
+    node._id = String(++this._nodesCount);
+    this._nodes[node._id] = node;
+  }
 }
