@@ -107,6 +107,6 @@ export default class EventForwarder {
   }
 
   _sendEvent(event) {
-    this._onEvent({ type: 'event', event });
+    this._onEvent(event);
   }
 }
