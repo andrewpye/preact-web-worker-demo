@@ -28,6 +28,7 @@ export default class EventForwarder {
       'devicemotion',
       'deviceorientation',
       'deviceorientationabsolute',
+      'unload', // triggers deprecation warning
     ];
 
     // Loop over all "on*" event names on Window and set up a proxy handler for each.
