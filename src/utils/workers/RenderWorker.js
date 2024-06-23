@@ -112,24 +112,24 @@ export default class RenderWorker extends Worker {
   }
 
   _processChildListMutation({ target, removedNodes, addedNodes, nextSibling }) {
-		let parent = this._getNode(target);
+    let parent = this._getNode(target);
 
-		removedNodes?.reverse().forEach((node) => {
-			parent.removeChild(this._getNode(node));
-		});
+    removedNodes?.reverse().forEach((node) => {
+      parent.removeChild(this._getNode(node));
+    });
 
-		addedNodes?.forEach((node) => {
-			parent.insertBefore(this._getNode(node), this._getNode(nextSibling));
-		});
-	}
+    addedNodes?.forEach((node) => {
+      parent.insertBefore(this._getNode(node), this._getNode(nextSibling));
+    });
+  }
 
-	_processAttributesMutation({ target, attributeName }) {
-		const value = target.attributes.find((attr) => attr.name === attributeName)?.value;
+  _processAttributesMutation({ target, attributeName }) {
+    const value = target.attributes.find((attr) => attr.name === attributeName)?.value;
 
-		this._getNode(target).setAttribute(attributeName, value);
-	}
+    this._getNode(target).setAttribute(attributeName, value);
+  }
 
-	_processCharacterDataMutation({ target }) {
-		this._getNode(target).nodeValue = target.nodeValue;
-	}
+  _processCharacterDataMutation({ target }) {
+    this._getNode(target).nodeValue = target.nodeValue;
+  }
 }

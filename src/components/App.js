@@ -2,16 +2,16 @@ import { useEffect } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.modu
 import RenderWorker from '../utils/workers/RenderWorker.js';
 
 export default ({ container = document.body }) => {
-	useEffect(() => {
-		const worker = new RenderWorker(
-			'/src/workers/main.js',
-			{ type: 'module', container }
-		);
+  useEffect(() => {
+    const worker = new RenderWorker(
+      '/src/workers/main.js',
+      { type: 'module', container }
+    );
 
-		return () => {
-			worker.terminate();
-		};
-	}, []);
+    return () => {
+      worker.terminate();
+    };
+  }, []);
 
-	return null; // Content will be populated by render worker.
+  return null; // Content will be populated by render worker.
 };
