@@ -1,6 +1,6 @@
 export default class NodeCollection {
   constructor() {
-    this._nodes = new Set();
+    this._nodes = new Map();
     this._nodesCount = 0;
   }
 
@@ -9,7 +9,20 @@ export default class NodeCollection {
       return;
     }
 
-    node._id = String(++this._nodesCount);
-    this._nodes[node._id] = node;
+    const id = String(++this._nodesCount);
+    node._id = id;
+    this._nodes.set(id, node);
+  }
+
+  get(node) {
+    let id;
+    if (node && typeof node === 'object') {
+      id = node._id;
+    }
+    else if (typeof node === 'string') {
+      id = node;
+    }
+
+    return id ? this._nodes.get(id) : null;
   }
 }

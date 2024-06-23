@@ -1,6 +1,7 @@
 import createVirtualDom from './createVirtualDom.js';
 import DomMutationCollector from './DomMutationCollector.js';
 import DomMutationMessagePoster from './DomMutationMessagePoster.js';
+import ForwardedEventHandler from './ForwardedEventHandler.js';
 import hookDomMutations from './hookDomMutations.js';
 import hookTextContentChanges from './hookTextContentChanges.js';
 import NodeCollection from './NodeCollection.js';
@@ -16,6 +17,8 @@ export default class WorkerisedRenderer {
     this._domMutationCollector = new DomMutationCollector((mutations) => {
       this._domMutationMessagePoster.sendMutations(mutations);
     });
+
+    this._forwardedEventHandler = new ForwardedEventHandler(this._nodeCollection);
 
     this._initialise();
   }
