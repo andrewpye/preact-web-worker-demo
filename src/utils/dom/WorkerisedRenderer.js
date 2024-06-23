@@ -38,16 +38,6 @@ export default class WorkerisedRenderer {
     this._render();
   }
 
-  _tagNode(node) {
-    // Tag each node with a unique ID so we can retrieve them later.
-    if (node._id) {
-      return;
-    }
-
-    node._id = String(++this._nodesCount);
-    this._nodes[node._id] = node;
-  }
-
   _processMessage(data) {
     switch (data.type) {
       case 'event':
