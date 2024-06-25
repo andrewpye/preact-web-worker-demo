@@ -55,9 +55,16 @@ export default class DomMutationMessagePoster {
       return serialisableNode;
     }, {});
 
-    if (node.ownerDocument) {
-      serialisableNode.ownerDocument = node.ownerDocument._id;
-    }
+    [
+      'ownerFrame',
+      'ownerDocument',
+    ].forEach((propName) => {
+      const owner = node[propName];
+
+      if (owner) {
+        serialisableNode[propName] = owner._id;
+      }
+    });
   
     if (serialisableNode.childNodes?.length) {
       serialisableNode.childNodes = this._getSerialisableCopy(serialisableNode.childNodes);

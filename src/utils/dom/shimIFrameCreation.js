@@ -7,6 +7,8 @@ const shimIFrameCreation = () => {
 
     // Initialise a new virtual document for the frame.
     const doc = new document.Document();
+
+    // Copy required properties (not on prototype) from top-level document.
     [
       'createElement',
       'createElementNS',
@@ -21,6 +23,8 @@ const shimIFrameCreation = () => {
       doc[propName] = document[propName];
     });
 
+    // Wrap node creation methods to associate the created node with the document.
+    // This allows the main thread to find the correct document for the node.
     [
       'createElement',
       'createElementNS',
@@ -40,11 +44,14 @@ const shimIFrameCreation = () => {
     doc.write = () => {}; // TODO: probably need to write into the real DOM so frame gets its initial content
     doc.close = () => {};
 
+    doc.ownerFrame = el;
+
     // Wrapping this in a setTimeout allows the iframe creation to have been
     // passed to the main thread before we start manipulating it. Otherwise,
     // we have no way of associating the document with its frame in the main
     // thread.
     setTimeout(() => {
+
       const docElement = doc.createElement('html');
       doc.documentElement = docElement;
       doc.appendChild(docElement);
