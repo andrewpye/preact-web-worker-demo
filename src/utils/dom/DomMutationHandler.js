@@ -19,7 +19,7 @@ export default class DomMutationHandler {
       return null;
     }
 
-    let node = this._nodes.get(vNode);
+    let node = this._nodes.get(vNode._id);
 
     if (node) {
       return node;
@@ -36,18 +36,18 @@ export default class DomMutationHandler {
 
       case 'HTML':
         // Only happens for iframe content.
-        node = this._nodes.get(vNode.ownerDocumentId).documentElement;
+        node = this._getOwnerDocument(vNode).documentElement;
         break;
 
       case 'HEAD':
         // Only happens for iframe content.
-        node = this._nodes.get(vNode.ownerDocumentId).head;
+        node = this._getOwnerDocument(vNode).head;
         break;
 
       case 'BODY':
         // Worker renders unframed content into the virtual body. Returning the container node
         // instead allows the consuming app to specify where the worker's output is rendered.
-        node = vNode.ownerDocumentId ? this._nodes.get(vNode.ownerDocumentId).body : this._container;
+        node = vNode.ownerDocumentId ? this._getOwnerDocument(vNode).body : this._container;
         break;
 
       default:
@@ -61,13 +61,21 @@ export default class DomMutationHandler {
     return node;
   }
 
+  _getOwnerDocument(node) {
+    return node.ownerDocumentId ?
+      this._nodes.get(node.ownerDocumentId) :
+      document;
+  }
+
   _createNode(vNode) {
     let node;
+    const doc = this._getOwnerDocument(vNode);
+
     if (vNode.nodeType === 3) {
-      node = document.createTextNode(vNode.nodeValue);
+      node = doc.createTextNode(vNode.nodeValue);
     }
     else if (vNode.nodeType === 1) {
-      node = document.createElement(vNode.nodeName);
+      node = doc.createElement(vNode.nodeName);
   
       if (vNode.className) {
         node.className = vNode.className;
