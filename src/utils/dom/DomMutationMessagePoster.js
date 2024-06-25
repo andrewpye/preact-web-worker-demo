@@ -7,6 +7,8 @@ const NON_SERIALISABLE_PROPS = [
   'body',
   'children',
   'parentNode',
+  'ownerDocument',
+  'ownerFrame',
   '__handlers',
   '_component',
   '_componentConstructor',
@@ -56,13 +58,13 @@ export default class DomMutationMessagePoster {
     }, {});
 
     [
-      'ownerFrame',
       'ownerDocument',
+      'ownerFrame',
     ].forEach((propName) => {
       const owner = node[propName];
 
       if (owner) {
-        serialisableNode[propName] = owner._id;
+        serialisableNode[`${propName}Id`] = owner._id;
       }
     });
   

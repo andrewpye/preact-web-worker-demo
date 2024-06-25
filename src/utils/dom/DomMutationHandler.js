@@ -3,6 +3,7 @@ const upperCaseFirstChar = (str) => str[0].toUpperCase() + str.slice(1);
 export default class DomMutationHandler {
   constructor({ container }) {
     this._container = container;
+
     this._nodes = new Map();
     this._pendingMutations = [];
   }
@@ -17,8 +18,7 @@ export default class DomMutationHandler {
       return null;
     }
 
-    const id = typeof vNode === 'string' ? vNode : vNode._id;
-    let node = this._nodes.get(id);
+    let node = this._nodes.get(vNode);
 
     if (node) {
       return node;
@@ -30,17 +30,17 @@ export default class DomMutationHandler {
     switch (vNode.nodeName) {
       case '#document':
         // Only happens for iframe document.
-        node = this._getNode(vNode.ownerFrame).contentDocument;
+        node = this._nodes.get(vNode.ownerFrameId).contentDocument;
         break;
 
       case 'HTML':
         // Only happens for iframe content.
-        node = this._getNode(vNode.ownerDocument).documentElement;
+        node = this._nodes.get(vNode.ownerDocumentId).documentElement;
         break;
 
       case 'HEAD':
         // Only happens for iframe content.
-        node = this._getNode(vNode.ownerDocument).head;
+        node = this._nodes.get(vNode.ownerDocumentId).head;
         break;
 
       case 'BODY':
@@ -53,7 +53,7 @@ export default class DomMutationHandler {
         node = this._createNode(vNode);
     }
 
-    this._nodes.set(id, node);
+    this._nodes.set(vNode._id, node);
 
     return node;
   }
@@ -83,14 +83,9 @@ export default class DomMutationHandler {
       });
   
       vNode.childNodes?.forEach((child) => {
-        node.appendChild(this._createNode(child));
+        node.appendChild(this._getNode(child));
       });
     }
-  
-    // This internal ID allows us to map virtual nodes from the
-    // worker to the corresponding DOM nodes in the main thread.
-    node._id = vNode._id;
-    this._nodes.set(vNode._id, node);
   
     return node;
   }
