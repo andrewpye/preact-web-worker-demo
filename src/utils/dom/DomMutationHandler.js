@@ -17,17 +17,43 @@ export default class DomMutationHandler {
       return null;
     }
 
-    if (vNode.nodeName === 'BODY') {
-      // Worker renders into the virtual body. Returning the container node instead
-      // allows the consuming app to specify where the worker's output is rendered.
-      return this._container;
+    const id = typeof vNode === 'string' ? vNode : vNode._id;
+    let node = this._nodes.get(id);
+
+    if (node) {
+      return node;
     }
 
-    let node = this._nodes.get(vNode._id);
-    if (!node) {
-      node = this._createNode(vNode);
-      this._nodes.set(vNode._id, node);
+    // Some nodes are created before rendering the virtual DOM into the main DOM.
+    // For those special cases, we need to look up the node and associate it with
+    // the virtual node's ID.
+    switch (vNode.nodeName) {
+      case '#document':
+        // Only happens for iframe document.
+        node = this._getNode(vNode.ownerFrame).contentDocument;
+        break;
+
+      case 'HTML':
+        // Only happens for iframe content.
+        node = this._getNode(vNode.ownerDocument).documentElement;
+        break;
+
+      case 'HEAD':
+        // Only happens for iframe content.
+        node = this._getNode(vNode.ownerDocument).head;
+        break;
+
+      case 'BODY':
+        // Worker renders unframed content into the virtual body. Returning the container node
+        // instead allows the consuming app to specify where the worker's output is rendered.
+        node = vNode.ownerDocument ? this._getNode(vNode.ownerDocument).body : this._container;
+        break;
+
+      default:
+        node = this._createNode(vNode);
     }
+
+    this._nodes.set(id, node);
 
     return node;
   }
@@ -113,6 +139,10 @@ export default class DomMutationHandler {
     });
 
     addedNodes?.forEach((node) => {
+      if (this._isPreCreatedNode(node)) {
+        return;
+      }
+
       parent.insertBefore(this._getNode(node), this._getNode(nextSibling));
     });
   }
@@ -125,5 +155,9 @@ export default class DomMutationHandler {
 
   _processCharacterDataMutation({ target }) {
     this._getNode(target).nodeValue = target.nodeValue;
+  }
+
+  _isPreCreatedNode({ nodeName }) {
+    return ['#document', 'HTML', 'HEAD', 'BODY',].includes(nodeName);
   }
 }
