@@ -5,8 +5,11 @@ export default class RenderWorker extends Worker {
   constructor(scriptUrl, { container, ...options }) {
     super(scriptUrl, options);
 
+    this._nodes = new Map();
+
     this._domMutationHandler = new DomMutationHandler({
       container,
+      nodes: this._nodes,
       onNodeFirstSeen: (node) => this._initialiseNode(node),
     });
 
@@ -16,6 +19,8 @@ export default class RenderWorker extends Worker {
   }
 
   _initialiseNode(node) {
+    this._nodes.set(node._id, node);
+
     if (node.nodeName !== 'IFRAME') {
       return;
     }
@@ -29,12 +34,29 @@ export default class RenderWorker extends Worker {
   }
 
   _handleMessage({ data }) {
-    if (data.type === 'domMutations') {
-      this._domMutationHandler.processMutations(data.mutations);
+    switch (data.type) {
+      case 'domMutations':
+        this._domMutationHandler.processMutations(data.mutations);
+        break;
+
+      case 'writeDocument':
+        this._writeDocument(data);
+        break;
     }
   }
 
   _forwardEvent(event) {
     this.postMessage({ type: 'event', event });
+  }
+
+  _writeDocument({ content, documentId }) {
+    const doc = this._nodes.get(documentId);
+    if (!doc) {
+      return;
+    }
+
+    doc.write(content);
+
+    this.postMessage({ type: 'documentWritten' });
   }
 }

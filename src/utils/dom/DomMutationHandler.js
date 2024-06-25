@@ -1,11 +1,11 @@
 const upperCaseFirstChar = (str) => str[0].toUpperCase() + str.slice(1);
 
 export default class DomMutationHandler {
-  constructor({ container, onNodeFirstSeen }) {
+  constructor({ container, nodes, onNodeFirstSeen }) {
     this._container = container;
+    this._nodes = nodes;
     this._onNodeFirstSeen = onNodeFirstSeen;
 
-    this._nodes = new Map();
     this._pendingMutations = [];
   }
 
@@ -54,7 +54,6 @@ export default class DomMutationHandler {
         node = this._createNode(vNode);
     }
 
-    this._nodes.set(vNode._id, node);
     node._id = vNode._id;
     this._onNodeFirstSeen(node);
 
