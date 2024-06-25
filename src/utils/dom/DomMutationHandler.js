@@ -47,7 +47,7 @@ export default class DomMutationHandler {
       case 'BODY':
         // Worker renders unframed content into the virtual body. Returning the container node
         // instead allows the consuming app to specify where the worker's output is rendered.
-        node = vNode.ownerDocument ? this._getNode(vNode.ownerDocument).body : this._container;
+        node = vNode.ownerDocumentId ? this._nodes.get(vNode.ownerDocumentId).body : this._container;
         break;
 
       default:
