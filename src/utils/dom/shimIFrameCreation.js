@@ -21,6 +21,19 @@ const shimIFrameCreation = () => {
       doc[propName] = document[propName];
     });
 
+    [
+      'createElement',
+      'createElementNS',
+      'createTextNode',
+    ].forEach((methodName) => {
+      const origMethod = doc[methodName];
+      doc[methodName] = function(...args) {
+        const el = origMethod.apply(this, args);
+        el.ownerDocument = this;
+        return el;
+      };
+    });
+
     // react-frame-component uses these methods to inject the initial
     // conten into the frame's document, so we need to stub them.
     doc.open = () => {};
