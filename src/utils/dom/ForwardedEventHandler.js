@@ -4,9 +4,17 @@ export default class ForwardedEventHandler {
   }
 
   handleEvent(event) {
-    const target = this._nodeCollection.get(event.target);
+    let target = this._nodeCollection.get(event.target);
 
-    target?.dispatchEvent({
+    while (!target?.dispatchEvent) {
+      target = target?.parentNode;
+
+      if (!target) {
+        return;
+      }
+    }
+
+    target.dispatchEvent({
       ...event,
       target,
       bubbles: true,
