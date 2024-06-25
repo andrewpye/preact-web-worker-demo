@@ -9,9 +9,11 @@ export default class NodeCollection {
       return;
     }
 
-    const id = String(++this._nodesCount);
-    node._id = id;
-    this._nodes.set(id, node);
+    this._add(node);
+
+    if (node.nodeName === 'IFRAME') {
+      this._add(node.contentDocument);
+    }
   }
 
   get(node) {
@@ -24,5 +26,11 @@ export default class NodeCollection {
     }
 
     return id ? this._nodes.get(id) : null;
+  }
+
+  _add(node) {
+    const id = String(++this._nodesCount);
+    node._id = id;
+    this._nodes.set(id, node);
   }
 }
