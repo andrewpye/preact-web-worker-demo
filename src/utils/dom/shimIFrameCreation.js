@@ -39,10 +39,29 @@ const shimIFrameCreation = () => {
     });
 
     // react-frame-component uses these methods to inject the initial
-    // conten into the frame's document, so we need to stub them.
+    // content into the frame's document, so we need to provide them.
     doc.open = () => {};
-    doc.write = () => {}; // TODO: probably need to write into the real DOM so frame gets its initial content
     doc.close = () => {};
+
+    doc.write = async () => {
+      return new Promise((resolve) => {
+        const onCompleted = ({ data }) => {
+          if (data.type !== 'documentWritten') {
+            return;
+          }
+
+          console.log('documentWritten');
+          removeEventListener('message', onCompleted);
+          resolve();
+        };
+
+        addEventListener('message', onCompleted);
+        postMessage('writeDocument', {
+          content: this.props.initialContent,
+          documentId: this._id,
+        });
+      });
+    };
 
     doc.ownerFrame = el;
 
@@ -51,7 +70,6 @@ const shimIFrameCreation = () => {
     // we have no way of associating the document with its frame in the main
     // thread.
     setTimeout(() => {
-
       const docElement = doc.createElement('html');
       doc.documentElement = docElement;
       doc.appendChild(docElement);
