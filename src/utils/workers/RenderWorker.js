@@ -6,7 +6,8 @@ export default class RenderWorker extends Worker {
     super(scriptUrl, options);
 
     this._domMutationHandler = new DomMutationHandler({ container });
-    this._eventForwarder = new EventForwarder((e) => this._forwardEvent(e));
+
+    this._eventForwarder = new EventForwarder(window, (e) => this._forwardEvent(e));
 
     this.onmessage = this._handleMessage;
   }
