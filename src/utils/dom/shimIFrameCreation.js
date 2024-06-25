@@ -40,24 +40,24 @@ const shimIFrameCreation = () => {
 
     // react-frame-component uses these methods to inject the initial
     // content into the frame's document, so we need to provide them.
-    doc.open = () => {};
-    doc.close = () => {};
+    doc.open = function() {};
+    doc.close = function() {};
 
-    doc.write = async () => {
+    doc.write = async function(content) {
       return new Promise((resolve) => {
         const onCompleted = ({ data }) => {
           if (data.type !== 'documentWritten') {
             return;
           }
 
-          console.log('documentWritten');
           removeEventListener('message', onCompleted);
           resolve();
         };
 
         addEventListener('message', onCompleted);
-        postMessage('writeDocument', {
-          content: this.props.initialContent,
+        postMessage({
+          type: 'writeDocument',
+          content,
           documentId: this._id,
         });
       });
