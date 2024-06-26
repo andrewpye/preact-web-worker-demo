@@ -39,8 +39,8 @@ export default class RenderWorker extends Worker {
         this._domMutationHandler.processMutations(data.mutations);
         break;
 
-      case 'writeDocument':
-        this._writeDocument(data);
+      case 'parseHtml':
+        this._parseHtml(data);
         break;
     }
   }
@@ -49,14 +49,21 @@ export default class RenderWorker extends Worker {
     this.postMessage({ type: 'event', event });
   }
 
-  _writeDocument({ content, documentId }) {
-    const doc = this._nodes.get(documentId);
-    if (!doc) {
-      return;
-    }
+  _parseHtml({ text }) {
+    // Parse a string of HTML into a new document instance.
+    const doc = new DOMParser().parseFromString(text, 'text/html');
 
-    doc.write(content);
+    // Convert the document's contents into a serializable object.
+    // TODO: extract this to a reusable utility.
+    const convertElementToObject = (e) => ({
+      nodeName: e.nodeName,
+      nodeType: e.nodeType,
+      nodeValue: e.nodeValue,
+      attributes: [...e.attributes].map(({ name, value }) => ({ name, value })),
+      childNodes: [...e.childNodes].map(convertElementToObject),
+    });
+    const parsedHtmlDocumentElement = convertElementToObject(doc.documentElement);
 
-    this.postMessage({ type: 'documentWritten' });
+    this.postMessage({ type: 'htmlParsed', tree: JSON.stringify(parsedHtmlDocumentElement) });
   }
 }
