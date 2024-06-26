@@ -38,31 +38,6 @@ const shimIFrameCreation = () => {
       };
     });
 
-    // react-frame-component uses these methods to inject the initial
-    // content into the frame's document, so we need to provide them.
-    doc.open = function() {};
-    doc.close = function() {};
-
-    doc.write = async function(content) {
-      return new Promise((resolve) => {
-        const onCompleted = ({ data }) => {
-          if (data.type !== 'documentWritten') {
-            return;
-          }
-
-          removeEventListener('message', onCompleted);
-          resolve();
-        };
-
-        addEventListener('message', onCompleted);
-        postMessage({
-          type: 'writeDocument',
-          content,
-          documentId: this._id,
-        });
-      });
-    };
-
     doc.ownerFrame = el;
 
     // Wrapping this in a setTimeout allows the iframe creation to have been
