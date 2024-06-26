@@ -1,5 +1,6 @@
 import DomMutationHandler from '../dom/DomMutationHandler.js';
 import EventForwarder from '../dom/EventForwarder.js';
+import NodeSerialiser from '../dom/NodeSerialiser.js';
 
 export default class RenderWorker extends Worker {
   constructor(scriptUrl, { container, ...options }) {
@@ -50,20 +51,11 @@ export default class RenderWorker extends Worker {
   }
 
   _parseHtml({ text }) {
-    // Parse a string of HTML into a new document instance.
     const doc = new DOMParser().parseFromString(text, 'text/html');
 
-    // Convert the document's contents into a serializable object.
-    // TODO: extract this to a reusable utility.
-    const convertElementToObject = (e) => ({
-      nodeName: e.nodeName,
-      nodeType: e.nodeType,
-      nodeValue: e.nodeValue,
-      attributes: [...e.attributes].map(({ name, value }) => ({ name, value })),
-      childNodes: [...e.childNodes].map(convertElementToObject),
+    this.postMessage({
+      type: 'htmlParsed',
+      tree: NodeSerialiser.serialiseNode(doc.documentElement),
     });
-    const parsedHtmlDocumentElement = convertElementToObject(doc.documentElement);
-
-    this.postMessage({ type: 'htmlParsed', tree: JSON.stringify(parsedHtmlDocumentElement) });
   }
 }

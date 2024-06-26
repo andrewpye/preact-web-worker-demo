@@ -1,4 +1,5 @@
 import Frame from './Frame/Frame.js';
+import NodeSerialiser from '../utils/dom/NodeSerialiser.js';
 
 export default class WorkerSafeFrame extends Frame {
   _hasInsertedInitialContent = false;
@@ -22,29 +23,10 @@ export default class WorkerSafeFrame extends Frame {
 
     const tree = await this._parse(this.props.initialContent);
 
-    // TODO: extract this to a reusable utility and maybe DRY up with element creation in DomMutationHandler.
-    const convertObjectToElement = (o, d) => {
-      let e;
-      if (o.nodeType === 3) {
-        e = d.createTextNode(o.nodeValue);
-      }
-      else if (o.nodeType === 1) {
-        e = d.createElement(o.nodeName);
-
-        o.attributes.forEach(({ name, value }) => {
-          e.setAttribute(name, value);
-        });
-
-        o.childNodes.forEach((child) => {
-          e.appendChild(convertObjectToElement(child, d));
-        });
-      }
-
-      return e;
-    };
+    const docElement = NodeSerialiser.deserialiseNode(tree, doc);
 
     // Rebuild the document's contents from the parsed HTML.
-    doc.documentElement = convertObjectToElement(tree, doc);
+    doc.documentElement = docElement;
 
     const childNodes = doc.documentElement.childNodes;
     doc.head = childNodes.find((n) => n.nodeName === 'HEAD');
@@ -65,7 +47,7 @@ export default class WorkerSafeFrame extends Frame {
 
         removeEventListener('message', onHtmlParsed);
 
-        resolve(JSON.parse(data.tree));
+        resolve(data.tree);
       };
 
       addEventListener('message', onHtmlParsed);
