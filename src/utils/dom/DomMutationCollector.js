@@ -6,11 +6,11 @@ export default class DomMutationCollector {
   }
 
   collectMutation(mutation) {
-    const isFirstMutationInBatch = !!this._pendingMutations.length;
+    const isFirstMutationInBatch = !this._pendingMutations.length;
   
     this._pendingMutations.push(mutation);
   
-    if (!isFirstMutationInBatch) {
+    if (isFirstMutationInBatch) {
       // Using setTimeout allows us to collect all mutations from
       // the currently-executing task before invoking the callback,
       // so we can emit mutations in batches instead of one by one.
