@@ -145,6 +145,7 @@ export default class DomMutationHandler {
 
     addedNodes?.forEach((node) => {
       if (this._isPreCreatedNode(node)) {
+        // TODO: do we need merge node into existing node (e.g. if frame initial content adds attributes to body)?
         return;
       }
 
