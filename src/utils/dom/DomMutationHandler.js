@@ -1,9 +1,11 @@
 const upperCaseFirstChar = (str) => str[0].toUpperCase() + str.slice(1);
 
 export default class DomMutationHandler {
-  constructor({ container }) {
+  constructor({ container, nodes, onNodeFirstSeen }) {
     this._container = container;
-    this._nodes = new Map();
+    this._nodes = nodes;
+    this._onNodeFirstSeen = onNodeFirstSeen;
+
     this._pendingMutations = [];
   }
 
@@ -17,28 +19,62 @@ export default class DomMutationHandler {
       return null;
     }
 
-    if (vNode.nodeName === 'BODY') {
-      // Worker renders into the virtual body. Returning the container node instead
-      // allows the consuming app to specify where the worker's output is rendered.
-      return this._container;
+    let node = this._nodes.get(vNode._id);
+
+    if (node) {
+      return node;
     }
 
-    let node = this._nodes.get(vNode._id);
-    if (!node) {
-      node = this._createNode(vNode);
-      this._nodes.set(vNode._id, node);
+    // Some nodes are created before rendering the virtual DOM into the main DOM.
+    // For those special cases, we need to look up the node and associate it with
+    // the virtual node's ID.
+    switch (vNode.nodeName) {
+      case '#document':
+        // Only happens for iframe document.
+        node = this._nodes.get(vNode.ownerFrameId).contentDocument;
+        break;
+
+      case 'HTML':
+        // Only happens for iframe content.
+        node = this._getOwnerDocument(vNode).documentElement;
+        break;
+
+      case 'HEAD':
+        // Only happens for iframe content.
+        node = this._getOwnerDocument(vNode).head;
+        break;
+
+      case 'BODY':
+        // Worker renders unframed content into the virtual body. Returning the container node
+        // instead allows the consuming app to specify where the worker's output is rendered.
+        node = vNode.ownerDocumentId ? this._getOwnerDocument(vNode).body : this._container;
+        break;
+
+      default:
+        node = this._createNode(vNode);
     }
+
+    node._id = vNode._id;
+    this._onNodeFirstSeen(node);
 
     return node;
   }
 
+  _getOwnerDocument(node) {
+    return node.ownerDocumentId ?
+      this._nodes.get(node.ownerDocumentId) :
+      document;
+  }
+
   _createNode(vNode) {
     let node;
+    const doc = this._getOwnerDocument(vNode);
+
     if (vNode.nodeType === 3) {
-      node = document.createTextNode(vNode.nodeValue);
+      node = doc.createTextNode(vNode.nodeValue);
     }
     else if (vNode.nodeType === 1) {
-      node = document.createElement(vNode.nodeName);
+      node = doc.createElement(vNode.nodeName);
   
       if (vNode.className) {
         node.className = vNode.className;
@@ -57,14 +93,9 @@ export default class DomMutationHandler {
       });
   
       vNode.childNodes?.forEach((child) => {
-        node.appendChild(this._createNode(child));
+        node.appendChild(this._getNode(child));
       });
     }
-  
-    // This internal ID allows us to map virtual nodes from the
-    // worker to the corresponding DOM nodes in the main thread.
-    node._id = vNode._id;
-    this._nodes.set(vNode._id, node);
   
     return node;
   }
@@ -113,6 +144,11 @@ export default class DomMutationHandler {
     });
 
     addedNodes?.forEach((node) => {
+      if (this._isPreCreatedNode(node)) {
+        // TODO: do we need merge node into existing node (e.g. if frame initial content adds attributes to body)?
+        return;
+      }
+
       parent.insertBefore(this._getNode(node), this._getNode(nextSibling));
     });
   }
@@ -125,5 +161,9 @@ export default class DomMutationHandler {
 
   _processCharacterDataMutation({ target }) {
     this._getNode(target).nodeValue = target.nodeValue;
+  }
+
+  _isPreCreatedNode({ nodeName }) {
+    return ['#document', 'HTML', 'HEAD', 'BODY',].includes(nodeName);
   }
 }

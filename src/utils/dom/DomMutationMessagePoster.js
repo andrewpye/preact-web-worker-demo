@@ -1,6 +1,14 @@
+// List of props to avoid serialising because they introduce circular references.
 const NON_SERIALISABLE_PROPS = [
+  'contentDocument',
+  'document',
+  'documentElement',
+  'head',
+  'body',
   'children',
   'parentNode',
+  'ownerDocument',
+  'ownerFrame',
   '__handlers',
   '_component',
   '_componentConstructor',
@@ -40,7 +48,7 @@ export default class DomMutationMessagePoster {
     }
   
     this._nodeCollection.add(node);
-  
+
     const serialisableNode = Object.keys(node).reduce((serialisableNode, propName) => {
       if (node.hasOwnProperty(propName) && NON_SERIALISABLE_PROPS.indexOf(propName) === -1) {
         serialisableNode[propName] = node[propName];
@@ -48,6 +56,17 @@ export default class DomMutationMessagePoster {
   
       return serialisableNode;
     }, {});
+
+    [
+      'ownerDocument',
+      'ownerFrame',
+    ].forEach((propName) => {
+      const owner = node[propName];
+
+      if (owner) {
+        serialisableNode[`${propName}Id`] = owner._id;
+      }
+    });
   
     if (serialisableNode.childNodes?.length) {
       serialisableNode.childNodes = this._getSerialisableCopy(serialisableNode.childNodes);

@@ -1,15 +1,19 @@
 export default class EventForwarder {
-  constructor(onEvent) {
-    this._touchData = null;
+  constructor(target, onEvent) {
+    this._target = target;
     this._onEvent = onEvent;
+
+    this._touchData = null;
 
     this._initEventForwarding();
   }
 
   _initEventForwarding() {
+    const target = this._target;
+
     let supportsPassive = false;
     try {
-      addEventListener('test', null, {
+      target.addEventListener('test', null, {
         get passive() { supportsPassive = true; }
       });
     } catch (e) {}
@@ -31,16 +35,16 @@ export default class EventForwarder {
       'unload', // triggers deprecation warning
     ];
 
-    // Loop over all "on*" event names on Window and set up a proxy handler for each.
-    for (let propName in window) {
+    // Loop over all "on*" event names on target object and set up a proxy handler for each.
+    for (let propName in target) {
       const eventName = propName.substring(2);
       if (
         propName.substring(0,2) === 'on' &&
         propName === propName.toLowerCase() &&
         eventsToIgnore.indexOf(eventName) < 0 &&
-        (window[propName] === null || typeof window[propName] === 'function')
+        (target[propName] === null || typeof target[propName] === 'function')
       ) {
-        addEventListener(eventName, (e) => this._forwardEvent(e), eventOptions);
+        target.addEventListener(eventName, (e) => this._forwardEvent(e), eventOptions);
       }
     }
   }
